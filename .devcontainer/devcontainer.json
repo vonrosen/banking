@@ -1,0 +1,29 @@
+{
+  "name": "Hack Proxygen + Postgres",
+  "dockerComposeFile": ["../backend/docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/var/www",
+  "forwardPorts": [8080, 5432],
+  "portsAttributes": {
+    "8080": {
+      "label": "HHVM Server",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "slackhq.vscode-hack",
+        "ms-ossdata.vscode-postgresql"
+      ],
+      "settings": {
+        "hack.clientPath": "/usr/bin/hh_client"
+      }
+    }
+  },
+  "remoteUser": "root"
+}

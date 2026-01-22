@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { Button } from 'react-native-paper';
+import { router } from 'expo-router';
 
 export default function WelcomeScreen() {
   return (
@@ -7,7 +8,7 @@ export default function WelcomeScreen() {
       <View style={styles.buttonContainer}>
         <Button
           mode="contained"
-          onPress={() => {}}
+          onPress={() => router.push('/signup')}
           contentStyle={styles.signUpContent}
           labelStyle={styles.signUpLabel}
           style={styles.signUpButton}
