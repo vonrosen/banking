@@ -3,7 +3,10 @@
   "dockerComposeFile": ["../backend/docker-compose.yml"],
   "service": "app",
   "workspaceFolder": "/var/www",
-  "forwardPorts": [8080, 5432],
+  "mounts": [
+    "source=vscode-server-extensions,target=/root/.vscode-server/extensions,type=volume"
+  ],
+  "forwardPorts": [8080, 5432, 8089],
   "portsAttributes": {
     "8080": {
       "label": "HHVM Server",
@@ -12,16 +15,32 @@
     "5432": {
       "label": "PostgreSQL",
       "onAutoForward": "silent"
+    },
+    "8089": {
+      "label": "HHVM Debugger",
+      "onAutoForward": "silent"
     }
   },
   "customizations": {
     "vscode": {
       "extensions": [
-        "slackhq.vscode-hack",
+        "pranayagarwal.vscode-hack",
         "ms-ossdata.vscode-postgresql"
       ],
       "settings": {
         "hack.clientPath": "/usr/bin/hh_client"
+      },
+      "launch": {
+        "version": "0.2.0",
+        "configurations": [
+          {
+            "name": "HHVM: Debug in Container",
+            "type": "hhvm",
+            "request": "attach",
+            "host": "localhost",
+            "port": 8089
+          }
+        ]
       }
     }
   },

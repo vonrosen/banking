@@ -2,9 +2,11 @@ services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "8080:8080"
+      - "8089:8089"
     volumes:
       - .:/var/www
+      - vscode-extensions:/root/.vscode-server/extensions
     environment:
       - DB_HOST=db
       - DB_USER=myuser
@@ -26,3 +28,4 @@ services:
 
 volumes:
   postgres_data:
+  vscode-extensions:
