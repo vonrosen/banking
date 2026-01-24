@@ -1,0 +1,19 @@
+{
+  "name": "Hack Language Server Only",
+  "image": "hhvm/hhvm-proxygen:latest",
+  "workspaceFolder": "/var/www",
+  "workspaceMount": "source=${localWorkspaceFolder}/backend,target=/var/www,type=bind,consistency=cached",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "pranayagarwal.vscode-hack"
+      ],
+      "settings": {
+        "hack.clientPath": "/usr/bin/hh_client",
+        "hack.workspaceRootPath": "/var/www",
+        "update.mode": "none"
+      }
+    }
+  },
+  "postStartCommand": "hh_server --daemon /var/www"
+}

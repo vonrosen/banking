@@ -7,19 +7,32 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 # Create the config directory if it doesn't exist
 RUN mkdir -p /etc/hhvm
 
-# Configure HHVM server
+# Configure HHVM server to use public/index.hack as entry point
 RUN echo "hhvm.server.port = 8080" >> /etc/hhvm/server.ini && \
-    echo "hhvm.server.source_root = /var/www" >> /etc/hhvm/server.ini && \
-    echo "hhvm.server.default_document = hello.hack" >> /etc/hhvm/server.ini
+    echo "hhvm.server.source_root = /var/www/public" >> /etc/hhvm/server.ini && \
+    echo "hhvm.server.default_document = index.hack" >> /etc/hhvm/server.ini && \
+    echo "hhvm.server.error_document404 = index.hack" >> /etc/hhvm/server.ini
 
-# Set working directory to the standard web root
+# Set working directory
 WORKDIR /var/www
 
-# Copy the hello script
-COPY hello.hack /var/www/hello.hack
+# Copy composer files first for better caching
+COPY composer.json ./
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader || true
+
+# Copy the rest of the application
+COPY . .
+
+# Generate the autoload map
+RUN if [ -f vendor/bin/hh-autoload ]; then vendor/bin/hh-autoload; fi
 
 # Expose the web server port and debug port
 EXPOSE 8080 8089

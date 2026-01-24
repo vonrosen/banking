@@ -11,16 +11,22 @@ services:
       - DB_HOST=db
       - DB_USER=myuser
       - DB_PASSWORD=mypass
-      - DB_NAME=hack_api
+      - DB_NAME=banking
     depends_on:
       - db
+    command: >
+      bash -c "
+        composer install &&
+        vendor/bin/hh-autoload &&
+        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8089
+      "
 
   db:
     image: postgres:latest
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypass
-      POSTGRES_DB: hack_api
+      POSTGRES_DB: banking
     ports:
       - "5432:5432"
     volumes:

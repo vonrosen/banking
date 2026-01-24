@@ -1,6 +1,6 @@
 {
   "name": "Hack Proxygen + Postgres",
-  "dockerComposeFile": ["../backend/docker-compose.yml"],
+  "dockerComposeFile": ["../../backend/docker-compose.yml"],
   "service": "app",
   "workspaceFolder": "/var/www",
   "mounts": [
@@ -25,10 +25,11 @@
     "vscode": {
       "extensions": [
         "pranayagarwal.vscode-hack",
-        "ms-ossdata.vscode-postgresql"
+        "ckolkman.vscode-postgres"
       ],
       "settings": {
-        "hack.clientPath": "/usr/bin/hh_client"
+        "hack.clientPath": "/usr/bin/hh_client",
+        "update.mode": "none"
       },
       "launch": {
         "version": "0.2.0",
@@ -44,5 +45,7 @@
       }
     }
   },
-  "remoteUser": "root"
+  "remoteUser": "root",
+  "shutdownAction": "stopCompose",
+  "postStartCommand": "hh_server --daemon /var/www"
 }

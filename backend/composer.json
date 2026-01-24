@@ -1,0 +1,22 @@
+{
+  "name": "banking/api",
+  "description": "Banking API built with Hack/HHVM",
+  "type": "project",
+  "config": {
+    "allow-plugins": {
+      "hhvm/hhvm-autoload": true
+    }
+  },
+  "require": {
+    "hhvm/hhvm-autoload": "^3.1",
+    "hhvm/hsl": "^4.0",
+    "hhvm/hsl-experimental": "^4.0"
+  },
+  "require-dev": {
+    "hhvm/hacktest": "^2.0",
+    "facebook/fbexpect": "^2.0"
+  },
+  "autoload": {
+    "classmap": ["src/"]
+  }
+}
