@@ -1,10 +1,13 @@
 namespace Banking\Controllers;
 
-use Dtos\CreateUserRequest;
-use namespace HH\Lib\{IO, Vec, Str};
+use type Banking\Dtos\CreateUserRequest;
+use type Banking\Attributes\Route;
+use type Banking\Interfaces\IController;
 
-final class UserController {
-  public async function createAsync(): Awaitable<void> {
+final class UserController implements IController {
+  
+  <<Route('POST', '/v1/users')>>
+  public async function createUserAsync(): Awaitable<void> {
     $input = \file_get_contents('php://input');
     $data = \json_decode($input, true);
 

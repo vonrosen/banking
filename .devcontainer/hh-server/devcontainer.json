@@ -11,9 +11,11 @@
       "settings": {
         "hack.clientPath": "/usr/bin/hh_client",
         "hack.workspaceRootPath": "/var/www",
+        "hack.hhast.lintMode": "whole-project",
         "update.mode": "none"
       }
     }
   },
+  "postCreateCommand": "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && composer update",
   "postStartCommand": "hh_server --daemon /var/www"
 }
