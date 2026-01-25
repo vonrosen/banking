@@ -8,12 +8,13 @@ services:
       - .:/var/www
       - vscode-extensions:/root/.vscode-server/extensions
     environment:
-      - DB_HOST=db
+      - DB_HOST=pgbouncer
+      - DB_PORT=6432
       - DB_USER=myuser
       - DB_PASSWORD=mypass
       - DB_NAME=banking
     depends_on:
-      - db
+      - pgbouncer
     command: >
       bash -c "
         composer install &&
@@ -31,6 +32,19 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    environment:
+      DATABASE_URL: postgres://myuser:mypass@db:5432/banking
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+    ports:
+      - "6432:6432"
+    depends_on:
+      - db
 
 volumes:
   postgres_data:

@@ -1,7 +1,7 @@
 namespace Banking\Config;
 
 use namespace HH\Lib\{Dict, Str};
-use type Banking\Interfaces\IController;
+use type Banking\Controllers\IController;
 
 <<__Memoize>>
 async function get_routed_methods_map_async(): Awaitable<dict<string, RoutedMethod>> {

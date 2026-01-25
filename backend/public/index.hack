@@ -1,12 +1,16 @@
 use namespace HH\Lib\{C, Str};
 use function Banking\Config\get_routed_methods_map_async;
 use function Banking\Utils\instance;
+use type Banking\Database\MigrationRunner;
 
 <<__EntryPoint>>
 async function main_async(): Awaitable<void> {
   // Initialize the Autoloader
   require_once(__DIR__.'/../vendor/autoload.hack');
   \Facebook\AutoloadMap\initialize();
+
+  // Run database migrations
+  MigrationRunner::runMigrations();
 
   // Get request info
   $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
