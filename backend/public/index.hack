@@ -10,11 +10,12 @@ async function main_async(): Awaitable<void> {
   \Facebook\AutoloadMap\initialize();
 
   // Run database migrations
-  MigrationRunner::runMigrations();
+  await MigrationRunner::runMigrationsAsync();
 
   // Get request info
-  $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-  $path = $_SERVER['REQUEST_URI'] ?? '/';
+  $server = \HH\global_get('_SERVER') as dict<_, _>;
+  $method = idx($server, 'REQUEST_METHOD', 'GET') as string;
+  $path = idx($server, 'REQUEST_URI', '/') as string;
 
   // Remove query string if present
   $path = Str\split($path, '?')[0];

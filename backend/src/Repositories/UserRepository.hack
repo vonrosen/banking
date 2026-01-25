@@ -2,20 +2,20 @@ namespace Banking\Repositories;
 
 use namespace HH\Lib\C;
 use type Banking\Database\ConnectionManager;
-use type Banking\Models\{User, CreateUser};
+use type Banking\Models\{CreateUser, User};
 
 final class UserRepository implements IUserRepository {
 
-  public function createUser(CreateUser $user): User {
+  public async function createUser(CreateUser $user): Awaitable<User> {
     $hashedPassword = \password_hash($user['password'], \PASSWORD_BCRYPT);
 
     $sql = <<<SQL
-INSERT INTO users (phone_number, password)
+INSERT INTO "user" (phone_number, password)
 VALUES (\$1, \$2)
 RETURNING id, phone_number, password, created_at
 SQL;
 
-    $row = ConnectionManager::query($sql, vec[
+    $rows = await ConnectionManager::queryAsync($sql, vec[
       $user['phone_number'],
       $hashedPassword,
     ]);
@@ -33,9 +33,9 @@ SQL;
     );
   }
 
-  public function findByPhoneNumber(string $phoneNumber): ?User {
-    $sql = 'SELECT id, phone_number, password, created_at FROM users WHERE phone_number = $1';
-    $rows = ConnectionManager::query($sql, vec[$phoneNumber]);
+  public async function findByPhoneNumber(string $phoneNumber): Awaitable<?User> {
+    $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE phone_number = $1';
+    $rows = await ConnectionManager::queryAsync($sql, vec[$phoneNumber]);
 
     if (C\is_empty($rows)) {
       return null;
@@ -50,9 +50,9 @@ SQL;
     );
   }
 
-  public function findById(string $id): ?User {
-    $sql = 'SELECT id, phone_number, password, created_at FROM users WHERE id = $1';
-    $rows = ConnectionManager::query($sql, vec[$id]);
+  public async function findById(string $id): Awaitable<?User> {
+    $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE id = $1';
+    $rows = await ConnectionManager::queryAsync($sql, vec[$id]);
 
     if (C\is_empty($rows)) {
       return null;

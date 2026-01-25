@@ -3,6 +3,7 @@
   "image": "hhvm/hhvm-proxygen:latest",
   "workspaceFolder": "/var/www",
   "workspaceMount": "source=${localWorkspaceFolder}/backend,target=/var/www,type=bind,consistency=cached",
+  "runArgs": ["--network=backend_default"],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -17,5 +18,5 @@
     }
   },
   "postCreateCommand": "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && composer update",
-  "postStartCommand": "hh_server --daemon /var/www"
+  "postStartCommand": "hh_server --daemon /var/www && hh_client /var/www"
 }

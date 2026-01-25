@@ -1,6 +1,7 @@
 namespace Banking\Controllers;
 
 use type Banking\Dtos\CreateUserRequest;
+use type Banking\Models\User;
 use type Banking\Attributes\Route;
 use type Banking\Repositories\{IUserRepository, UserRepository};
 
@@ -21,7 +22,7 @@ final class UserController implements IController {
     $phone_number = $request['phone_number'];
     $password = $request['password'];
 
-    $existingUser = $this->userRepository->findByPhoneNumber($phone_number);
+    $existingUser = await $this->userRepository->findByPhoneNumber($phone_number);
     if ($existingUser !== null) {
       \http_response_code(409);
       echo \json_encode(shape(
@@ -31,16 +32,13 @@ final class UserController implements IController {
     }
 
     try {
-      $user = $this->userRepository->createUser(shape(
+      $user = await $this->userRepository->createUser(shape(
         'phone_number' => $phone_number,
         'password' => $password,
       ));
 
       \http_response_code(201);
-      echo \json_encode(shape(
-        'status' => 'created',
-        'user_id' => $user['id'],
-      ));
+      echo \json_encode($user);
     } catch (\Exception $e) {
       \error_log('Failed to create user: '.$e->getMessage());
       \http_response_code(500);
