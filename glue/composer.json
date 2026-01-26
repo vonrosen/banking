@@ -1,0 +1,37 @@
+{
+  "name": "nazg/glue",
+  "type": "library",
+  "description": "Dependency Injection Container For HHVM/Hack",
+  "homepage": "https://github.com/nazg-hack/glue",
+  "license": "MIT",
+  "keywords": [
+    "hack",
+    "hhvm",
+    "container"
+  ],
+  "minimum-stability": "stable",
+  "require": {
+    "hhvm": "^4.98",
+    "hhvm/hsl": "^4.94",
+    "hhvm/hsl-experimental": "^4.93",
+    "hhvm/hhvm-autoload": "^3.0"
+  },
+  "require-dev": {
+    "hhvm/hacktest": "^2.2.3",
+    "facebook/fbexpect": "^2.7",
+    "hhvm/hhast": "^4.100"
+  },
+  "autoload": {
+    "psr-4": {
+      "Nazg\\Glue\\": "src/"
+    }
+  },
+  "scripts": {
+    "tests": [
+      "hhvm ./vendor/bin/hacktest.hack tests/"
+    ],
+    "register": [
+      "hhvm ./vendor/bin/hh-autoload.hack"
+    ]
+  }
+}
