@@ -7,10 +7,10 @@ import { formatPhoneNumber, isValidUSPhoneNumber } from '@/utils/phoneNumber';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, TextInput as RNTextInput, StyleSheet, View } from 'react-native';
-import { HelperText, Text, TextInput } from 'react-native-paper';
+import { HelperText, TextInput } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 
-export default function SignUpScreen() {
+export default function LoginScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const phoneInputRef = useRef<RNTextInput>(null);
@@ -46,14 +46,14 @@ export default function SignUpScreen() {
     setShowError(false);
     setIsLoading(true);
     try {
-      const user = await userService.createUser({
+      const user = await userService.login({
         phone_number: formattedPhone,
         password,
       });
       dispatch(setUser(user));
       router.replace('/connect-bank');
     } catch (error) {
-      console.error('Signup failed', error);
+      console.error('Login failed', error);
       setShowError(true);
     } finally {
       setIsLoading(false);
@@ -66,7 +66,7 @@ export default function SignUpScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.errorContainer}>
-        <ErrorMessage message="Failed To Create User" visible={showError} />
+        <ErrorMessage message="Login Failed" visible={showError} />
       </View>
       <View style={styles.form}>
         <View>
@@ -107,11 +107,10 @@ export default function SignUpScreen() {
           <HelperText type="error" visible={!!passwordError}>
             {passwordError}
           </HelperText>
-          <Text style={styles.passwordHint}>Password must be at least 6 characters</Text>
         </View>
 
         <SubmitButton
-          label="Submit"
+          label="Login"
           onPress={handleSubmit}
           disabled={!isFormValid}
           loading={isLoading}
@@ -135,10 +134,5 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 8,
-  },
-  passwordHint: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 12,
   },
 });

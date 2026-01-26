@@ -16,7 +16,7 @@ final class UserRepository implements IUserRepository {
     $sql = <<<SQL
 INSERT INTO "user" (phone_number, password)
 VALUES (\$1, \$2)
-RETURNING id, phone_number, password, created_at
+RETURNING id, phone_number, created_at
 SQL;
 
     $rows = await $this->connectionManager->queryAsync($sql, vec[
@@ -32,13 +32,34 @@ SQL;
     return shape(
       'id' => (string)$row['id'],
       'phone_number' => (string)$row['phone_number'],
-      'password' => (string)$row['password'],
+      'created_at' => (string)$row['created_at'],
+    );
+  }
+
+  public async function findByPhoneNumberAndPassword(string $phoneNumber, string $password): Awaitable<?User> {
+    $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE phone_number = $1';
+    $rows = await $this->connectionManager->queryAsync($sql, vec[$phoneNumber]);
+
+    if (C\is_empty($rows)) {
+      return null;
+    }
+
+    $row = $rows[0];
+    $hashedPassword = (string)$row['password'];
+
+    if (!\password_verify($password, $hashedPassword)) {
+      return null;
+    }
+
+    return shape(
+      'id' => (string)$row['id'],
+      'phone_number' => (string)$row['phone_number'],
       'created_at' => (string)$row['created_at'],
     );
   }
 
   public async function findByPhoneNumber(string $phoneNumber): Awaitable<?User> {
-    $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE phone_number = $1';
+    $sql = 'SELECT id, phone_number, created_at FROM "user" WHERE phone_number = $1';
     $rows = await $this->connectionManager->queryAsync($sql, vec[$phoneNumber]);
 
     if (C\is_empty($rows)) {
@@ -49,13 +70,12 @@ SQL;
     return shape(
       'id' => (string)$row['id'],
       'phone_number' => (string)$row['phone_number'],
-      'password' => (string)$row['password'],
       'created_at' => (string)$row['created_at'],
     );
   }
 
   public async function findById(string $id): Awaitable<?User> {
-    $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE id = $1';
+    $sql = 'SELECT id, phone_number, created_at FROM "user" WHERE id = $1';
     $rows = await $this->connectionManager->queryAsync($sql, vec[$id]);
 
     if (C\is_empty($rows)) {
@@ -66,7 +86,6 @@ SQL;
     return shape(
       'id' => (string)$row['id'],
       'phone_number' => (string)$row['phone_number'],
-      'password' => (string)$row['password'],
       'created_at' => (string)$row['created_at'],
     );
   }

@@ -3,7 +3,6 @@ namespace Banking\Models;
 type User = shape(
   'id' => string,
   'phone_number' => string,
-  'password' => string,
   'created_at' => string,
 );
 

@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
         </Button>
         <Button
           mode="outlined"
-          onPress={() => {}}
+          onPress={() => router.push('/login')}
           style={styles.loginButton}
         >
           Login

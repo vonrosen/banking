@@ -1,3 +1,5 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { persistor, store } from '@/store';
 import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,8 +10,8 @@ import {
   adaptNavigationTheme,
 } from 'react-native-paper';
 import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 
 const { LightTheme, DarkTheme } = adaptNavigationTheme({
   reactNavigationLight: NavigationDefaultTheme,
@@ -38,14 +40,20 @@ export default function RootLayout() {
   const navigationTheme = colorScheme === 'dark' ? DarkTheme : LightTheme;
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <ThemeProvider value={navigationTheme}>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false, title: 'Welcome' }} />
-          <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </PaperProvider>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <PaperProvider theme={paperTheme}>
+          <ThemeProvider value={navigationTheme}>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false, title: 'Welcome' }} />
+              <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
+              <Stack.Screen name="login" options={{ title: 'Login' }} />
+              <Stack.Screen name="connect-bank" options={{ title: 'Connect Bank Account', headerBackVisible: false }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </PaperProvider>
+      </PersistGate>
+    </Provider>
   );
 }
