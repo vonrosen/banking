@@ -6,6 +6,10 @@ use type Banking\Models\{CreateUser, User};
 
 final class UserRepository implements IUserRepository {
 
+  public function __construct(
+    private ConnectionManager $connectionManager
+  ) {}
+
   public async function createUser(CreateUser $user): Awaitable<User> {
     $hashedPassword = \password_hash($user['password'], \PASSWORD_BCRYPT);
 
@@ -15,7 +19,7 @@ VALUES (\$1, \$2)
 RETURNING id, phone_number, password, created_at
 SQL;
 
-    $rows = await ConnectionManager::queryAsync($sql, vec[
+    $rows = await $this->connectionManager->queryAsync($sql, vec[
       $user['phone_number'],
       $hashedPassword,
     ]);
@@ -35,7 +39,7 @@ SQL;
 
   public async function findByPhoneNumber(string $phoneNumber): Awaitable<?User> {
     $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE phone_number = $1';
-    $rows = await ConnectionManager::queryAsync($sql, vec[$phoneNumber]);
+    $rows = await $this->connectionManager->queryAsync($sql, vec[$phoneNumber]);
 
     if (C\is_empty($rows)) {
       return null;
@@ -52,7 +56,7 @@ SQL;
 
   public async function findById(string $id): Awaitable<?User> {
     $sql = 'SELECT id, phone_number, password, created_at FROM "user" WHERE id = $1';
-    $rows = await ConnectionManager::queryAsync($sql, vec[$id]);
+    $rows = await $this->connectionManager->queryAsync($sql, vec[$id]);
 
     if (C\is_empty($rows)) {
       return null;

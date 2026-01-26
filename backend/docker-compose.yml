@@ -6,6 +6,7 @@ services:
       - "8089:8089"
     volumes:
       - .:/var/www
+      - ../glue:/var/glue
       - vscode-extensions:/root/.vscode-server/extensions
     environment:
       - DB_HOST=pgbouncer
@@ -13,8 +14,11 @@ services:
       - DB_USER=myuser
       - DB_PASSWORD=mypass
       - DB_NAME=banking
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - pgbouncer
+      - redis
     command: >
       bash -c "
         composer install --no-scripts &&
@@ -59,6 +63,20 @@ services:
       db:
         condition: service_healthy
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   vscode-extensions:
+  redis_data:

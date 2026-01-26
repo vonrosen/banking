@@ -1,7 +1,7 @@
 namespace Banking\Database;
 
 final class DatabaseConfig {
-  public static function getConnectionString(): string {
+  public function getConnectionString(): string {
     $host = \getenv('DB_HOST');
     $host = $host is string ? $host : 'localhost';
 

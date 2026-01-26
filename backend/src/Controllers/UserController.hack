@@ -4,13 +4,15 @@ use type Banking\Dtos\CreateUserRequest;
 use type Banking\Models\User;
 use type Banking\Attributes\Route;
 use type Banking\Repositories\{IUserRepository, UserRepository};
+use type Banking\Logging\LoggerFactory;
+use type HackLogging\LogLevel;
 
 final class UserController implements IController {
 
-  private IUserRepository $userRepository;
+  private \HackLogging\Logger $logger;
 
-  public function __construct() {
-    $this->userRepository = new UserRepository();
+  public function __construct(private IUserRepository $userRepository) {    
+    $this->logger = LoggerFactory::getLogger('UserController');
   }
 
   <<Route('POST', '/v1/users')>>
@@ -40,7 +42,7 @@ final class UserController implements IController {
       \http_response_code(201);
       echo \json_encode($user);
     } catch (\Exception $e) {
-      \error_log('Failed to create user: '.$e->getMessage());
+      await $this->logger->writeAsync(LogLevel::ERROR, 'Failed to create user: '.$e->getMessage(), dict[]);
       \http_response_code(500);
       echo \json_encode(shape(
         'error' => 'Failed to create user',

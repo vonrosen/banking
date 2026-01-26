@@ -1,7 +1,7 @@
 use namespace HH\Lib\{C, Str};
-use function Banking\Config\get_routed_methods_map_async;
-use function Banking\Utils\instance;
+use function Banking\Utils\get_routed_methods_map_async;
 use type Banking\Database\MigrationRunner;
+use type Banking\Container\AppContainer;
 
 <<__EntryPoint>>
 async function main_async(): Awaitable<void> {
@@ -9,8 +9,11 @@ async function main_async(): Awaitable<void> {
   require_once(__DIR__.'/../vendor/autoload.hack');
   \Facebook\AutoloadMap\initialize();
 
+  $container = await AppContainer::getAsync();
+
   // Run database migrations
-  await MigrationRunner::runMigrationsAsync();
+  $migrationRunner = $container->get(MigrationRunner::class);
+  await $migrationRunner->runMigrationsAsync();
 
   // Get request info
   $server = \HH\global_get('_SERVER') as dict<_, _>;
@@ -37,6 +40,7 @@ async function main_async(): Awaitable<void> {
   $routed_method = $routed_methods[$key];
   $controller_name = $routed_method['controller'];
   $method_name = $routed_method['method'];
-  $controller = instance($controller_name);
+  /* HH_FIXME[4110] Using string class name with container->get() */
+  $controller = $container->get($controller_name);
   await $controller->$method_name();
 }
