@@ -7,6 +7,7 @@ services:
     volumes:
       - .:/var/www
       - ../glue:/var/glue
+      - ..:/workspace
       - vscode-extensions:/root/.vscode-server/extensions
     environment:
       - DB_HOST=pgbouncer

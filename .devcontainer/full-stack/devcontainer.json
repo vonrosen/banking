@@ -2,7 +2,7 @@
   "name": "Hack Proxygen + Postgres",
   "dockerComposeFile": ["../../backend/docker-compose.yml"],
   "service": "app",
-  "workspaceFolder": "/var/www",
+  "workspaceFolder": "/workspace",
   "mounts": [
     "source=vscode-server-extensions,target=/root/.vscode-server/extensions,type=volume"
   ],
@@ -29,6 +29,7 @@
       ],
       "settings": {
         "hack.clientPath": "/usr/bin/hh_client",
+        "hack.workspaceRootPath": "/var/www",
         "update.mode": "none"
       },
       "launch": {

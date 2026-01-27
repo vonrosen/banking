@@ -1,8 +1,8 @@
 {
   "name": "Hack Language Server Only",
   "image": "hhvm/hhvm-proxygen:latest",
-  "workspaceFolder": "/var/www",
-  "workspaceMount": "source=${localWorkspaceFolder}/backend,target=/var/www,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "runArgs": ["--network=backend_default"],
   "customizations": {
     "vscode": {
@@ -11,12 +11,12 @@
       ],
       "settings": {
         "hack.clientPath": "/usr/bin/hh_client",
-        "hack.workspaceRootPath": "/var/www",
+        "hack.workspaceRootPath": "/workspace/backend",
         "hack.hhast.lintMode": "whole-project",
         "update.mode": "none"
       }
     }
   },
-  "postCreateCommand": "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && composer update",
-  "postStartCommand": "hh_server --daemon /var/www && hh_client /var/www"
+  "postCreateCommand": "curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && cd /workspace/backend && composer update",
+  "postStartCommand": "hh_server --daemon /workspace/backend && hh_client /workspace/backend"
 }

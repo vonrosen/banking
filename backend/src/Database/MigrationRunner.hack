@@ -54,6 +54,8 @@ SQL;
 
     $migrations = vec[
       tuple('001_create_user_table', async () ==> await $this->migration001CreateUsersTableAsync()),
+      tuple('002_create_insurance_analysis_table', async () ==> await $this->migration002CreateInsuranceAnalysisTableAsync()),
+      tuple('003_create_insurance_policy_table', async () ==> await $this->migration003CreateInsurancePolicyTableAsync()),
     ];
 
     foreach ($migrations as $migration) {
@@ -93,6 +95,55 @@ SQL;
 
     await $this->connectionManager->queryAsync(
       'CREATE INDEX IF NOT EXISTS idx_user_phone_number ON "user"(phone_number)',
+    );
+  }
+
+  private async function migration002CreateInsuranceAnalysisTableAsync(): Awaitable<void> {
+    $sql = <<<SQL
+CREATE TABLE IF NOT EXISTS insurance_analysis (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES "user"(id),
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  consent_token TEXT NOT NULL,
+  transaction_data JSONB,
+  llm_analysis_result JSONB,
+  provider_policy_details JSONB,
+  mcp_quotes JSONB,
+  error_message TEXT,
+  error_step VARCHAR(50),
+  retry_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+SQL;
+    await $this->connectionManager->queryAsync($sql);
+
+    await $this->connectionManager->queryAsync(
+      'CREATE INDEX IF NOT EXISTS idx_insurance_analysis_user_id ON insurance_analysis(user_id)',
+    );
+
+    await $this->connectionManager->queryAsync(
+      'CREATE INDEX IF NOT EXISTS idx_insurance_analysis_status ON insurance_analysis(status)',
+    );
+  }
+
+  private async function migration003CreateInsurancePolicyTableAsync(): Awaitable<void> {
+    $sql = <<<SQL
+CREATE TABLE IF NOT EXISTS insurance_policy (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES "user"(id),
+  provider_name VARCHAR(100) NOT NULL,
+  monthly_cost DECIMAL(10, 2) NOT NULL,
+  quote_details JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+SQL;
+    await $this->connectionManager->queryAsync($sql);
+
+    await $this->connectionManager->queryAsync(
+      'CREATE INDEX IF NOT EXISTS idx_insurance_policy_user_id ON insurance_policy(user_id)',
     );
   }
 }
