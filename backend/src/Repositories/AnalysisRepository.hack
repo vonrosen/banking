@@ -1,0 +1,48 @@
+namespace Banking\Repositories;
+
+use type Banking\Models\{Analysis, CreateAnalysis};
+use type Banking\Database\ConnectionManager;
+use namespace HH\Lib\C;
+
+final class AnalysisRepository implements IAnalysisRepository {
+
+  public function __construct(
+    private ConnectionManager $connectionManager
+  ) {}
+
+  public async function createAnalysis(CreateAnalysis $analysis): Awaitable<Analysis> {
+    $sql = <<<SQL
+INSERT INTO insurance_analysis (user_id, bank_login_token)
+VALUES (\$1, \$2)
+RETURNING id, user_id, status, bank_login_token, transaction_data, llm_analysis_result, provider_policy_details, quotes, error_message, error_step, retry_count, created_at, updated_at
+SQL;
+
+    $rows = await $this->connectionManager->queryAsync($sql, vec[
+      $analysis['user_id'],
+      $analysis['bank_login_token'],
+    ]);
+
+    if (C\is_empty($rows)) {
+      throw new \Exception('Failed to create analysis');
+    }
+
+    $row = $rows[0];
+    $error_message = $row['error_message'];
+    $error_step = $row['error_step'];
+    return shape(
+      'id' => (string)$row['id'],
+      'user_id' => (string)$row['user_id'],
+      'status' => (string)$row['status'],
+      'bank_login_token' => (string)$row['bank_login_token'],
+      'transaction_data' => $row['transaction_data'],
+      'llm_analysis_result' => $row['llm_analysis_result'],
+      'provider_policy_details' => $row['provider_policy_details'],
+      'quotes' => $row['quotes'],
+      'error_message' => $error_message is string ? $error_message : null,
+      'error_step' => $error_step is string ? $error_step : null,
+      'retry_count' => (int)$row['retry_count'],
+      'created_at' => (string)$row['created_at'],
+      'updated_at' => (string)$row['updated_at'],
+    );
+  }
+}

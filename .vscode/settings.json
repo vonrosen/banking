@@ -1,7 +1,14 @@
 {
+  "hack.hhast.lintMode": "whole-project",
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  "files.exclude": {
+    "/var/**": true
+  },
+  "search.exclude": {
+    "/var/**": true
   }
 }

@@ -6,10 +6,10 @@
   "mounts": [
     "source=vscode-server-extensions,target=/root/.vscode-server/extensions,type=volume"
   ],
-  "forwardPorts": [8080, 5432, 8089],
+  "forwardPorts": [8080, 5432, 8089, 8090, 8091],
   "portsAttributes": {
     "8080": {
-      "label": "HHVM Server",
+      "label": "HHVM API Server",
       "onAutoForward": "notify"
     },
     "5432": {
@@ -17,7 +17,15 @@
       "onAutoForward": "silent"
     },
     "8089": {
-      "label": "HHVM Debugger",
+      "label": "HHVM API Debugger",
+      "onAutoForward": "silent"
+    },
+    "8090": {
+      "label": "HHVM Worker Debugger",
+      "onAutoForward": "silent"
+    },
+    "8091": {
+      "label": "HHVM Worker Server",
       "onAutoForward": "silent"
     }
   },
@@ -29,7 +37,7 @@
       ],
       "settings": {
         "hack.clientPath": "/usr/bin/hh_client",
-        "hack.workspaceRootPath": "/var/www",
+        "hack.workspaceRootPath": "/workspace/backend",
         "update.mode": "none"
       },
       "launch": {
@@ -48,5 +56,5 @@
   },
   "remoteUser": "root",
   "shutdownAction": "stopCompose",
-  "postStartCommand": "hh_server --daemon /var/www"
+  "postStartCommand": "hh_server --daemon /workspace/backend"
 }

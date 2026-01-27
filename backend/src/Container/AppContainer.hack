@@ -1,12 +1,15 @@
 namespace Banking\Container;
 
 use type Nazg\Glue\{Container, DependencyFactory, Scope};
-use type Banking\Repositories\{IUserRepository, UserRepository};
+use type Banking\Repositories\{IUserRepository, IAnalysisRepository, UserRepository, AnalysisRepository};
 use type Banking\Database\ConnectionManager;
 use type Banking\Database\DatabaseConfig;
 use type Banking\Utils\LoggerFactory;
 use type Banking\Database\MigrationRunner;
 use type Banking\Controllers\UserController;
+use type Banking\Controllers\AnalysisController;
+use type Banking\Redis\{IRedisClient, RedisClient, RedisConfig};
+use type Banking\Worker\BankTransactionWorker;
 
 final class AppContainer {
   private static ?Container $container = null;
@@ -17,6 +20,10 @@ final class AppContainer {
 
       $container->bind(IUserRepository::class)
         ->to(UserRepository::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(IAnalysisRepository::class)
+        ->to(AnalysisRepository::class)
         ->in(Scope::SINGLETON);
 
       $container->bind(ConnectionManager::class)
@@ -33,6 +40,22 @@ final class AppContainer {
 
       $container->bind(UserController::class)
         ->to(UserController::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(AnalysisController::class)
+        ->to(AnalysisController::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(RedisConfig::class)
+        ->to(RedisConfig::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(IRedisClient::class)
+        ->to(RedisClient::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(BankTransactionWorker::class)
+        ->to(BankTransactionWorker::class)
         ->in(Scope::SINGLETON);
 
       await $container->lockAsync();

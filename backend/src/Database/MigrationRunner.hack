@@ -104,11 +104,11 @@ CREATE TABLE IF NOT EXISTS insurance_analysis (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES "user"(id),
   status VARCHAR(50) NOT NULL DEFAULT 'pending',
-  consent_token TEXT NOT NULL,
+  bank_login_token TEXT NOT NULL,
   transaction_data JSONB,
   llm_analysis_result JSONB,
   provider_policy_details JSONB,
-  mcp_quotes JSONB,
+  quotes JSONB,
   error_message TEXT,
   error_step VARCHAR(50),
   retry_count INTEGER DEFAULT 0,
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS insurance_policy (
   user_id UUID NOT NULL REFERENCES "user"(id),
   provider_name VARCHAR(100) NOT NULL,
   monthly_cost DECIMAL(10, 2) NOT NULL,
-  quote_details JSONB NOT NULL,
+  policy_details JSONB NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )

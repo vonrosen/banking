@@ -1,8 +1,7 @@
 namespace Banking\Logging;
 
-use namespace HH\Lib\{C, IO};
+use namespace HH\Lib\C;
 use type HackLogging\Logger;
-use type HackLogging\Handler\StdHandler;
 
 final class LoggerFactory {
 
@@ -10,7 +9,8 @@ final class LoggerFactory {
 
   public static function getLogger(string $name): Logger {
     if (!C\contains_key(self::$loggers, $name)) {
-      self::$loggers[$name] = new Logger($name, vec[new StdHandler(IO\request_output())]);
+      // Use file-based handler to avoid polluting HTTP responses
+      self::$loggers[$name] = new Logger($name, vec[new FileLogHandler('/tmp/app.log')]);
     }
     return self::$loggers[$name];
   }

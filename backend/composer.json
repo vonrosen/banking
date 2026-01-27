@@ -5,7 +5,7 @@
   "repositories": [
     {
       "type": "path",
-      "url": "/var/glue",
+      "url": "/workspace/glue",
       "options": {
         "symlink": false
       }

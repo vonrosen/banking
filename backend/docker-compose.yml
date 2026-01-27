@@ -4,9 +4,9 @@ services:
     ports:
       - "8080:8080"
       - "8089:8089"
+      - "8090:8090"
+      - "8091:8091"
     volumes:
-      - .:/var/www
-      - ../glue:/var/glue
       - ..:/workspace
       - vscode-extensions:/root/.vscode-server/extensions
     environment:
@@ -20,17 +20,18 @@ services:
     depends_on:
       - pgbouncer
       - redis
+    working_dir: /workspace/backend
     command: >
       bash -c "
         composer install --no-scripts &&
-        if [ ! -f /var/www/vendor/autoload.hack ]; then
+        if [ ! -f /workspace/backend/vendor/autoload.hack ]; then
           echo 'Generating autoload files...' &&
-          vendor/bin/hh-autoload;
+          vendor/bin/hh-autoload --quiet;
         else
           echo 'Autoload files already exist, skipping generation.';
         fi &&
         echo 'Starting HHVM server...' &&
-        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8089
+        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8089 -d hhvm.debugger.vs_debug_listen_address=0.0.0.0
       "
 
   db:
@@ -76,6 +77,49 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  worker:
+    build: .
+    network_mode: "service:app"
+    volumes:
+      - ..:/workspace
+    environment:
+      - DB_HOST=pgbouncer
+      - DB_PORT=5432
+      - DB_USER=myuser
+      - DB_PASSWORD=mypass
+      - DB_NAME=banking
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - app
+      - redis
+    working_dir: /workspace/backend
+    command: >
+      bash -c "
+        echo 'Waiting for autoload files...' &&
+        while [ ! -f /workspace/backend/vendor/autoload.hack ]; do
+          sleep 1;
+        done &&
+        echo 'Starting HHVM worker server on port 8091 (debugger on 8090)...' &&
+        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -vServer.Port=8091 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.server.default_document=worker.hack -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8090 &
+        HHVM_PID=$$! &&
+        echo 'Waiting for HHVM server to be ready (max 30s)...' &&
+        TRIES=0 &&
+        MAX_TRIES=30 &&
+        until curl -s -o /dev/null -w '' --connect-timeout 1 http://localhost:8091/ 2>/dev/null; do
+          TRIES=$$((TRIES + 1)) &&
+          if [ $$TRIES -ge $$MAX_TRIES ]; then
+            echo 'ERROR: HHVM server failed to start within 30 seconds' &&
+            exit 1;
+          fi &&
+          echo \"Waiting for HHVM... ($$TRIES/$$MAX_TRIES)\" &&
+          sleep 1;
+        done &&
+        echo 'HHVM server is ready. Starting worker loop...' &&
+        curl -s http://localhost:8091/worker.hack &
+        wait
+      "
 
 volumes:
   postgres_data:
