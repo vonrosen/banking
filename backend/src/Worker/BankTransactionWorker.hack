@@ -27,7 +27,7 @@ final class BankTransactionWorker implements Worker {
     $this->logger = LoggerFactory::getLogger('BankTransactionWorker');
   }
 
-  public function getCompletionStatus(): InsuranceAnalysisStatus {
+  public function getStepStatus(): InsuranceAnalysisStatus {
     return InsuranceAnalysisStatus::ANALYZING_TRANSACTIONS;
   }
 
@@ -83,7 +83,8 @@ final class BankTransactionWorker implements Worker {
       \json_encode($transactions) as string,
     );
 
-    $nextStatus = $this->statusStateMachine->getNextStatus($this->getCompletionStatus()) as nonnull;
+    $nextStatus = $this->statusStateMachine->getNextStatus($this->getStepStatus()) as nonnull;
+
     $this->redisClient->xadd(
       $nextStatus['stream'] as nonnull,
       $fields,
@@ -91,8 +92,7 @@ final class BankTransactionWorker implements Worker {
 
     await $this->analysisRepository->updateAnalysisStatus(
       $fields['analysis_id'],
-      (string)$this->getCompletionStatus(),
+      (string)$this->getStepStatus(),
     );
-
   }
 }

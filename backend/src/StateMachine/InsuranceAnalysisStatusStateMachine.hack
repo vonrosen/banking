@@ -28,7 +28,7 @@ final class InsuranceAnalysisStatusStateMachine {
     }
   }
 
-  public  function getInitialStatus(): StatusTransition {
+  public function getInitialStatus(): StatusTransition {
     $status = InsuranceAnalysisStatus::PENDING;
     return shape(
       'status' => $status,
