@@ -1,6 +1,6 @@
 namespace Banking\Models;
 
-enum InsuranceAnalysisStatus: string {
+enum AnalysisStatus: string {
   PENDING = 'pending';
   DOWNLOADING_TRANSACTIONS = 'downloading_transactions';
   ANALYZING_TRANSACTIONS = 'analyzing_transactions';

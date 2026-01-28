@@ -9,9 +9,10 @@ use type Banking\Database\MigrationRunner;
 use type Banking\Controllers\UserController;
 use type Banking\Controllers\AnalysisController;
 use type Banking\Redis\{IRedisClient, RedisClient, RedisConfig};
-use type Banking\Worker\BankTransactionWorker;
-use type Banking\Clients\BankingClient;
-use type Banking\StateMachine\InsuranceAnalysisStatusStateMachine;
+use type Banking\Worker\{BankTransactionWorker, LLMAnalysisWorker};
+use type Banking\Clients\{BankingClient, IBankingClient, IGeminiClient, GeminiClientProvider};
+use type Banking\StateMachine\AnalysisStatusStateMachine;
+use type Banking\Services\RedisStreamService;
 
 final class AppContainer {
   private static ?Container $container = null;
@@ -60,12 +61,24 @@ final class AppContainer {
         ->to(BankTransactionWorker::class)
         ->in(Scope::SINGLETON);
 
-      $container->bind(BankingClient::class)
+      $container->bind(IBankingClient::class)
         ->to(BankingClient::class)
         ->in(Scope::SINGLETON);
 
-      $container->bind(InsuranceAnalysisStatusStateMachine::class)
-        ->to(InsuranceAnalysisStatusStateMachine::class)
+      $container->bind(AnalysisStatusStateMachine::class)
+        ->to(AnalysisStatusStateMachine::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(RedisStreamService::class)
+        ->to(RedisStreamService::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(IGeminiClient::class)
+        ->provider(new GeminiClientProvider())
+        ->in(Scope::SINGLETON);
+
+      $container->bind(LLMAnalysisWorker::class)
+        ->to(LLMAnalysisWorker::class)
         ->in(Scope::SINGLETON);
 
       await $container->lockAsync();

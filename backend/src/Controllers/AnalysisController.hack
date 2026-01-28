@@ -4,14 +4,16 @@ use type Banking\Attributes\Route;
 use type Banking\Repositories\IAnalysisRepository;
 use type Banking\Dtos\CreateAnalysisRequest;
 use type Banking\Redis\IRedisClient;
-use type Banking\StateMachine\InsuranceAnalysisStatusStateMachine;
+use type Banking\StateMachine\AnalysisStatusStateMachine;
+use type Banking\Services\RedisStreamService;
 
 final class AnalysisController implements IController {
 
   public function __construct(
     private IAnalysisRepository $analysisRepository,
     private IRedisClient $redisClient,
-    private InsuranceAnalysisStatusStateMachine $statusStateMachine,
+    private AnalysisStatusStateMachine $statusStateMachine,
+    private RedisStreamService $redisStreamService,
   ) {}
 
   <<Route('POST', '/v1/analyses')>>
@@ -30,7 +32,11 @@ final class AnalysisController implements IController {
       ));
 
       $this->redisClient->xadd(
-        $this->statusStateMachine->getInitialStatus()['stream'] as nonnull,
+        $this->redisStreamService->getStreamName(
+          $this->statusStateMachine->getNextStatus(
+            $this->statusStateMachine->getInitialStatus()
+            ) as nonnull,
+        ) as nonnull,
         dict[
           'analysis_id' => $analysis['id'],
           'user_id' => $user_id,

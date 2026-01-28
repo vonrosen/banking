@@ -10,13 +10,15 @@ services:
       - ..:/workspace
       - vscode-extensions:/root/.vscode-server/extensions
     environment:
-      - DB_HOST=pgbouncer
-      - DB_PORT=5432
-      - DB_USER=myuser
-      - DB_PASSWORD=mypass
-      - DB_NAME=banking
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - MOCKED_TRANSACTION_ANALYSIS=${MOCKED_TRANSACTION_ANALYSIS:-true}
     depends_on:
       - pgbouncer
       - redis
@@ -25,10 +27,10 @@ services:
       bash -c "
         composer install --no-scripts &&
         if [ ! -f /workspace/backend/vendor/autoload.hack ]; then
-          echo 'Generating autoload files...' &&
-          vendor/bin/hh-autoload --quiet;
+          echo 'Generating autoload files (first run)...' &&
+          vendor/bin/hh-autoload;
         else
-          echo 'Autoload files already exist, skipping generation.';
+          echo 'Autoload files exist, using fallback handler for new classes';
         fi &&
         echo 'Starting HHVM server...' &&
         hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8089 -d hhvm.debugger.vs_debug_listen_address=0.0.0.0
@@ -37,15 +39,15 @@ services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypass
-      POSTGRES_DB: banking
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U myuser -d banking"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -53,12 +55,12 @@ services:
   pgbouncer:
     image: edoburu/pgbouncer:latest
     environment:
-      DATABASE_URL: postgres://myuser:mypass@db:5432/banking
-      POOL_MODE: transaction
-      MAX_CLIENT_CONN: 100
-      DEFAULT_POOL_SIZE: 20
-      MIN_POOL_SIZE: 5
-      AUTH_TYPE: scram-sha-256
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      POOL_MODE: ${POOL_MODE}
+      MAX_CLIENT_CONN: ${MAX_CLIENT_CONN}
+      DEFAULT_POOL_SIZE: ${DEFAULT_POOL_SIZE}
+      MIN_POOL_SIZE: ${MIN_POOL_SIZE}
+      AUTH_TYPE: ${AUTH_TYPE}
     ports:
       - "6432:5432"
     depends_on:
@@ -78,19 +80,19 @@ services:
       timeout: 5s
       retries: 5
 
-  worker:
+  worker-get-bank-transactions:
     build: .
     network_mode: "service:app"
     volumes:
       - ..:/workspace
     environment:
-      - DB_HOST=pgbouncer
-      - DB_PORT=5432
-      - DB_USER=myuser
-      - DB_PASSWORD=mypass
-      - DB_NAME=banking
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     depends_on:
       - app
       - redis
@@ -102,7 +104,7 @@ services:
           sleep 1;
         done &&
         echo 'Starting HHVM worker server on port 8091 (debugger on 8090)...' &&
-        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -vServer.Port=8091 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.server.default_document=worker.hack -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8090 &
+        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -vServer.Port=8091 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.server.default_document=worker-get-bank-transactions.hack -d hhvm.debugger.vs_debug_enable=1 -d hhvm.debugger.vs_debug_listen_port=8090 &
         HHVM_PID=$$! &&
         echo 'Waiting for HHVM server to be ready (max 30s)...' &&
         TRIES=0 &&
@@ -117,7 +119,52 @@ services:
           sleep 1;
         done &&
         echo 'HHVM server is ready. Starting worker loop...' &&
-        curl -s http://localhost:8091/worker.hack &
+        curl -s http://localhost:8091/worker-get-bank-transactions.hack &
+        wait
+      "
+
+  worker-llm:
+    build: .
+    network_mode: "service:app"
+    volumes:
+      - ..:/workspace
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - MOCKED_TRANSACTION_ANALYSIS=${MOCKED_TRANSACTION_ANALYSIS:-true}
+    depends_on:
+      - app
+      - redis
+    working_dir: /workspace/backend
+    command: >
+      bash -c "
+        echo 'Waiting for autoload files...' &&
+        while [ ! -f /workspace/backend/vendor/autoload.hack ]; do
+          sleep 1;
+        done &&
+        echo 'Starting HHVM LLM worker server on port 8092...' &&
+        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -vServer.Port=8092 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.server.default_document=worker-llm.hack &
+        HHVM_PID=$$! &&
+        echo 'Waiting for HHVM server to be ready (max 30s)...' &&
+        TRIES=0 &&
+        MAX_TRIES=30 &&
+        until curl -s -o /dev/null -w '' --connect-timeout 1 http://localhost:8092/ 2>/dev/null; do
+          TRIES=$$((TRIES + 1)) &&
+          if [ $$TRIES -ge $$MAX_TRIES ]; then
+            echo 'ERROR: HHVM server failed to start within 30 seconds' &&
+            exit 1;
+          fi &&
+          echo \"Waiting for HHVM... ($$TRIES/$$MAX_TRIES)\" &&
+          sleep 1;
+        done &&
+        echo 'HHVM server is ready. Starting LLM worker loop...' &&
+        curl -s http://localhost:8092/worker-llm.hack &
         wait
       "
 

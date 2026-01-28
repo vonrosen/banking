@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
+    ca-certificates \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -31,8 +33,8 @@ RUN composer install --no-dev --optimize-autoloader || true
 # Copy the rest of the application
 COPY . .
 
-# Generate the autoload map
-RUN if [ -f vendor/bin/hh-autoload ]; then vendor/bin/hh-autoload; fi
+# Note: For production, uncomment the following line to generate autoload map at build time
+# RUN if [ -f vendor/bin/hh-autoload ]; then vendor/bin/hh-autoload; fi
 
 # Expose the web server port and debug port
 EXPOSE 8080 8089
