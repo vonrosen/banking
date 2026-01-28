@@ -73,6 +73,11 @@ final class BankTransactionWorker implements Worker {
     );
     await $this->logger->writeAsync(LogLevel::INFO, $log, dict[]);
 
+    await $this->analysisRepository->updateAnalysisStatus(
+      $fields['analysis_id'],
+      (string)$this->getStepStatus(),
+    );    
+
     $transactions = vec[];
     foreach ($this->bankingClient->getTransactionsAsync($fields['bank_login_token']) await as $transaction) {
       $transactions[] = $transaction;
@@ -88,11 +93,6 @@ final class BankTransactionWorker implements Worker {
     $this->redisClient->xadd(
       $nextStatus['stream'] as nonnull,
       $fields,
-    );
-
-    await $this->analysisRepository->updateAnalysisStatus(
-      $fields['analysis_id'],
-      (string)$this->getStepStatus(),
     );
   }
 }
