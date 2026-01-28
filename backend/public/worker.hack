@@ -14,5 +14,5 @@ async function worker_main_async(): Awaitable<void> {
   \file_put_contents('/tmp/worker.log', "[INFO] Worker started\n", \FILE_APPEND);
 
   // Run the worker loop (runs forever)
-  $worker->run();
+  await $worker->run();
 }

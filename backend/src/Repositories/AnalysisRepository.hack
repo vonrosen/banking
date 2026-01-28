@@ -45,4 +45,36 @@ SQL;
       'updated_at' => (string)$row['updated_at'],
     );
   }
+
+
+
+  public async function updateAnalysisTransactionData(
+    string $analysis_id, 
+    string $transaction_data
+    ): Awaitable<void> {
+    $sql = <<<SQL
+UPDATE insurance_analysis
+SET transaction_data = \$1
+WHERE id = \$2
+SQL;
+    await $this->connectionManager->queryAsync($sql, vec[
+      $transaction_data,
+      $analysis_id,
+    ]);
+  } 
+
+  public async function updateAnalysisStatus(
+    string $analysis_id,
+    string $status,
+  ): Awaitable<void> {
+    $sql = <<<SQL
+UPDATE insurance_analysis
+SET status = \$1, updated_at = CURRENT_TIMESTAMP
+WHERE id = \$2
+SQL;
+    await $this->connectionManager->queryAsync($sql, vec[
+      $status,
+      $analysis_id,
+    ]); 
+  }
 }

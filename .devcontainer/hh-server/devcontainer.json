@@ -3,7 +3,6 @@
   "image": "hhvm/hhvm-proxygen:latest",
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
-  "runArgs": ["--network=backend_default"],
   "customizations": {
     "vscode": {
       "extensions": [

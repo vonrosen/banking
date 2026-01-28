@@ -2,9 +2,54 @@ namespace Banking\StateMachine;
 
 use type Banking\Models\InsuranceAnalysisStatus;
 
+type StatusTransition = shape(
+  'status' => InsuranceAnalysisStatus,
+  'stream' => ?string,
+);
+
 final class InsuranceAnalysisStatusStateMachine {
 
-  public static function getNextStatus(
+  private function getStreamName(InsuranceAnalysisStatus $status): ?string {
+    switch ($status) {
+      case InsuranceAnalysisStatus::DOWNLOADING_TRANSACTIONS:
+        return 'insurance:get_bank_transactions';
+      case InsuranceAnalysisStatus::ANALYZING_TRANSACTIONS:
+        return 'insurance:analyze_bank_transactions';
+      case InsuranceAnalysisStatus::SCRAPING_PROVIDER:
+        return 'insurance:scrape_provider';
+      case InsuranceAnalysisStatus::FETCHING_QUOTES:
+        return 'insurance:fetch_quotes';
+      case InsuranceAnalysisStatus::COMPLETED:
+        return 'insurance:completion';
+      case InsuranceAnalysisStatus::PENDING:
+      case InsuranceAnalysisStatus::AWAITING_PROVIDER_CONSENT:
+      case InsuranceAnalysisStatus::FAILED:
+        return null;
+    }
+  }
+
+  public  function getInitialStatus(): StatusTransition {
+    $status = InsuranceAnalysisStatus::PENDING;
+    return shape(
+      'status' => $status,
+      'stream' => $this->getStreamName($status),
+    );
+  }
+
+  public function getNextStatus(
+    InsuranceAnalysisStatus $current,
+  ): ?StatusTransition {
+    $nextStatus = $this->getNextStatusEnum($current);
+    if ($nextStatus is null) {
+      return null;
+    }
+    return shape(
+      'status' => $nextStatus,
+      'stream' => $this->getStreamName($nextStatus),
+    );
+  }
+
+  private function getNextStatusEnum(
     InsuranceAnalysisStatus $current,
   ): ?InsuranceAnalysisStatus {
     switch ($current) {
@@ -26,7 +71,7 @@ final class InsuranceAnalysisStatusStateMachine {
     }
   }
 
-  public static function canTransition(
+  public function canTransition(
     InsuranceAnalysisStatus $from,
     InsuranceAnalysisStatus $to,
   ): bool {
@@ -34,20 +79,20 @@ final class InsuranceAnalysisStatusStateMachine {
       return true;
     }
 
-    $nextStatus = self::getNextStatus($from);
+    $nextStatus = $this->getNextStatusEnum($from);
     return $nextStatus === $to;
   }
 
-  public static function isTerminal(InsuranceAnalysisStatus $status): bool {
+  public function isTerminal(InsuranceAnalysisStatus $status): bool {
     return $status === InsuranceAnalysisStatus::COMPLETED ||
            $status === InsuranceAnalysisStatus::FAILED;
   }
 
-  public static function requiresUserAction(InsuranceAnalysisStatus $status): bool {
+  public function requiresUserAction(InsuranceAnalysisStatus $status): bool {
     return $status === InsuranceAnalysisStatus::AWAITING_PROVIDER_CONSENT;
   }
 
-  public static function getProgressPercent(InsuranceAnalysisStatus $status): int {
+  public function getProgressPercent(InsuranceAnalysisStatus $status): int {
     switch ($status) {
       case InsuranceAnalysisStatus::PENDING:
         return 0;

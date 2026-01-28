@@ -10,6 +10,8 @@ use type Banking\Controllers\UserController;
 use type Banking\Controllers\AnalysisController;
 use type Banking\Redis\{IRedisClient, RedisClient, RedisConfig};
 use type Banking\Worker\BankTransactionWorker;
+use type Banking\Clients\BankingClient;
+use type Banking\StateMachine\InsuranceAnalysisStatusStateMachine;
 
 final class AppContainer {
   private static ?Container $container = null;
@@ -56,6 +58,14 @@ final class AppContainer {
 
       $container->bind(BankTransactionWorker::class)
         ->to(BankTransactionWorker::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(BankingClient::class)
+        ->to(BankingClient::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(InsuranceAnalysisStatusStateMachine::class)
+        ->to(InsuranceAnalysisStatusStateMachine::class)
         ->in(Scope::SINGLETON);
 
       await $container->lockAsync();

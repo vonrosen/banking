@@ -1,46 +1,59 @@
 namespace Banking\Worker;
 
+use namespace HH\Lib\Str;
 use type Banking\Redis\IRedisClient;
+use type Banking\Clients\BankingClient;
+use type Banking\Logging\LoggerFactory;
+use type HackLogging\Logger;
+use type Banking\Repositories\IAnalysisRepository;
+use type Banking\StateMachine\InsuranceAnalysisStatusStateMachine;
+use type Banking\Models\InsuranceAnalysisStatus;
+use type HackLogging\LogLevel;
 
-final class BankTransactionWorker {
+final class BankTransactionWorker implements Worker {
   const string STREAM_NAME = 'insurance:get_bank_transactions';
   const string GROUP_NAME = 'bank_transaction_workers';
 
   private string $consumerName;
+  private Logger $logger;
 
   public function __construct(
     private IRedisClient $redisClient,
+    private BankingClient $bankingClient,
+    private IAnalysisRepository $analysisRepository,
+    private InsuranceAnalysisStatusStateMachine $statusStateMachine,
   ) {
-    // Generate unique consumer name for this worker instance
     $this->consumerName = 'worker_'.\getmypid().'_'.\uniqid();
+    $this->logger = LoggerFactory::getLogger('BankTransactionWorker');
   }
 
-  public function run(): void {
-    \file_put_contents('/tmp/worker.log', "[INFO] BankTransactionWorker started (consumer: {$this->consumerName})\n", \FILE_APPEND);
+  public function getCompletionStatus(): InsuranceAnalysisStatus {
+    return InsuranceAnalysisStatus::ANALYZING_TRANSACTIONS;
+  }
 
-    // Create consumer group if it doesn't exist (MKSTREAM creates the stream too)
+  public async function run(): Awaitable<void> {
+    await $this->logger->writeAsync(LogLevel::INFO, Str\format('BankTransactionWorker started (consumer: %s)', $this->consumerName), dict[]);
+
     $this->redisClient->xgroupCreate(
       self::STREAM_NAME,
       self::GROUP_NAME,
-      '0',    // Start from beginning
-      true,   // MKSTREAM - create stream if doesn't exist
+      '0',
+      true,
     );
 
     while (true) {
-      // XREADGROUP delivers each message to only ONE consumer in the group
       $entries = $this->redisClient->xreadgroup(
         self::GROUP_NAME,
         $this->consumerName,
         vec[self::STREAM_NAME],
-        10,    // count
-        5000,  // block for 5 seconds
+        10,
+        5000,
       );
 
       foreach ($entries as $entry) {
         foreach ($entry['messages'] as $message) {
-          $this->processMessage($message['id'], $message['fields']);
+          await $this->processMessageAsync($message['id'], $message['fields']);
 
-          // Acknowledge the message after successful processing
           $this->redisClient->xack(
             self::STREAM_NAME,
             self::GROUP_NAME,
@@ -51,18 +64,35 @@ final class BankTransactionWorker {
     }
   }
 
-  private function processMessage(string $id, dict<string, string> $fields): void {
+  private async function processMessageAsync(string $id, dict<string, string> $fields): Awaitable<void> {
     $log = \sprintf(
-      "[%s] Processing message %s: %s\n",
+      "[%s] Processing message %s: %s",
       \date('Y-m-d H:i:s'),
       $id,
       \json_encode($fields),
     );
-    \file_put_contents('/tmp/worker.log', $log, \FILE_APPEND);
+    await $this->logger->writeAsync(LogLevel::INFO, $log, dict[]);
 
-    // TODO: Implement actual business logic here
-    // - Download bank transactions
-    // - Update analysis status in database
-    // - Publish to next queue
+    $transactions = vec[];
+    foreach ($this->bankingClient->getTransactionsAsync($fields['bank_login_token']) await as $transaction) {
+      $transactions[] = $transaction;
+    }
+
+    await $this->analysisRepository->updateAnalysisTransactionData(
+      $fields['analysis_id'],
+      \json_encode($transactions) as string,
+    );
+
+    $nextStatus = $this->statusStateMachine->getNextStatus($this->getCompletionStatus()) as nonnull;
+    $this->redisClient->xadd(
+      $nextStatus['stream'] as nonnull,
+      $fields,
+    );
+
+    await $this->analysisRepository->updateAnalysisStatus(
+      $fields['analysis_id'],
+      (string)$this->getCompletionStatus(),
+    );
+
   }
 }
