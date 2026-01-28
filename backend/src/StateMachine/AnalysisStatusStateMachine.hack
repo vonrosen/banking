@@ -9,13 +9,7 @@ final class AnalysisStatusStateMachine {
     return AnalysisStatus::PENDING;
   }
 
-  public function getNextStatus(
-    AnalysisStatus $current,
-  ): ?AnalysisStatus {
-    return $this->getNextStatusEnum($current);
-  }
-
-  private function getNextStatusEnum(
+  private function getNextStatus(
     AnalysisStatus $current,
   ): ?AnalysisStatus {
     switch ($current) {

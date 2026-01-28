@@ -52,12 +52,6 @@ final class LLMAnalysisWorker extends BaseWorker {
       $analysisId,
       $response['text'],
     );
-
-    $nextStatus = $this->statusStateMachine->getNextStatus($this->getAnalysisStatus()) as nonnull;
-    await $this->analysisRepository->updateAnalysisStatus(
-        $analysisId,
-        (string)$nextStatus,
-      );
   }
 
   private function buildPrompt(mixed $transactionData): string {
