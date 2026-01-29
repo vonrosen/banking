@@ -168,6 +168,49 @@ services:
         wait
       "
 
+  worker-notification:
+    build: .
+    network_mode: "service:app"
+    volumes:
+      - ..:/workspace
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    depends_on:
+      - app
+      - redis
+    working_dir: /workspace/backend
+    command: >
+      bash -c "
+        echo 'Waiting for autoload files...' &&
+        while [ ! -f /workspace/backend/vendor/autoload.hack ]; do
+          sleep 1;
+        done &&
+        echo 'Starting HHVM notification worker server on port 8093...' &&
+        hhvm -m server -c /etc/hhvm/server.ini -vServer.AllowRunAsRoot=1 -vServer.Port=8093 -d hhvm.server.source_root=/workspace/backend/public -d hhvm.server.default_document=worker-notification.hack &
+        HHVM_PID=$$! &&
+        echo 'Waiting for HHVM server to be ready (max 30s)...' &&
+        TRIES=0 &&
+        MAX_TRIES=30 &&
+        until curl -s -o /dev/null -w '' --connect-timeout 1 http://localhost:8093/ 2>/dev/null; do
+          TRIES=$$((TRIES + 1)) &&
+          if [ $$TRIES -ge $$MAX_TRIES ]; then
+            echo 'ERROR: HHVM server failed to start within 30 seconds' &&
+            exit 1;
+          fi &&
+          echo \"Waiting for HHVM... ($$TRIES/$$MAX_TRIES)\" &&
+          sleep 1;
+        done &&
+        echo 'HHVM server is ready. Starting notification worker loop...' &&
+        curl -s http://localhost:8093/worker-notification.hack &
+        wait
+      "
+
 volumes:
   postgres_data:
   vscode-extensions:

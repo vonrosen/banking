@@ -9,7 +9,7 @@ use type Banking\Database\MigrationRunner;
 use type Banking\Controllers\UserController;
 use type Banking\Controllers\AnalysisController;
 use type Banking\Redis\{IRedisClient, RedisClient, RedisConfig};
-use type Banking\Worker\{BankTransactionWorker, LLMAnalysisWorker};
+use type Banking\Worker\{BankTransactionWorker, LLMAnalysisWorker, NotificationWorker};
 use type Banking\Clients\{BankingClient, IBankingClient, IGeminiClient, GeminiClientProvider};
 use type Banking\StateMachine\AnalysisStatusStateMachine;
 use type Banking\Services\RedisStreamService;
@@ -79,6 +79,10 @@ final class AppContainer {
 
       $container->bind(LLMAnalysisWorker::class)
         ->to(LLMAnalysisWorker::class)
+        ->in(Scope::SINGLETON);
+
+      $container->bind(NotificationWorker::class)
+        ->to(NotificationWorker::class)
         ->in(Scope::SINGLETON);
 
       await $container->lockAsync();

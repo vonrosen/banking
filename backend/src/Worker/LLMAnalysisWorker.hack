@@ -11,7 +11,7 @@ use type Banking\Models\AnalysisStatus;
 use type HackLogging\LogLevel;
 use type Banking\Services\RedisStreamService;
 
-final class LLMAnalysisWorker extends BaseWorker {
+final class LLMAnalysisWorker extends BaseAnalysisWorker {
 
   public function __construct(
     private IRedisClient $redisClient,
@@ -37,20 +37,28 @@ final class LLMAnalysisWorker extends BaseWorker {
     dict<string, string> $fields,
   ): Awaitable<void> {
     $analysisId = $fields['analysis_id'];
-    $analysis = await $this->analysisRepository->getAnalysis($analysisId) as nonnull;
+    $analysis = await $this->analysisRepository->getAnalysis($analysisId)
+      as nonnull;
     $transactionData = $analysis['transaction_data'] as nonnull;
     $prompt = $this->buildPrompt($transactionData);
     $response = await $this->geminiClient->generateContentAsync($prompt);
-    
+
     await $this->logger->writeAsync(
       LogLevel::INFO,
-      Str\format('Gemini response for %s: %s', $analysisId, Str\slice($response['text'], 0, 200)),
+      Str\format(
+        'Gemini response for %s: %s',
+        $analysisId,
+        Str\slice($response['text'], 0, 200),
+      ),
       dict[],
     );
 
-    await $this->analysisRepository->updateAnalysisLLMResult(
-      $analysisId,
-      $response['text'],
+    await $this->analysisRepository
+      ->updateAnalysisLLMResult($analysisId, $response['text']);
+
+    $this->redisClient->xadd(
+      $this->redisStreamService->getNotificationWorkerStreamName(),
+      $fields,
     );
   }
 

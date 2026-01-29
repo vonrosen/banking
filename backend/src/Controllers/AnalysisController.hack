@@ -1,8 +1,9 @@
 namespace Banking\Controllers;
 
+use namespace HH\Lib\Dict;
 use type Banking\Attributes\Route;
 use type Banking\Repositories\IAnalysisRepository;
-use type Banking\Dtos\CreateAnalysisRequest;
+use type Banking\Dtos\{AnalysisEvent, CreateAnalysisRequest};
 use type Banking\Redis\IRedisClient;
 use type Banking\StateMachine\AnalysisStatusStateMachine;
 use type Banking\Services\RedisStreamService;
@@ -31,19 +32,24 @@ final class AnalysisController implements IController {
         'bank_login_token' => $bank_login_token,
       ));
 
+      $analysisEvent = dict[
+        'analysis_id' => $analysis['id'],
+        'status' => $analysis['status'],
+        'user_id' => $user_id,
+      ];
+
       $this->redisClient->xadd(
         $this->redisStreamService->getStreamName(
-          $this->statusStateMachine->getNextStatus(
-            $this->statusStateMachine->getInitialStatus()
-            ) as nonnull,
+          $this->statusStateMachine
+            ->getNextStatus($this->statusStateMachine->getInitialStatus())
+            as nonnull,
         ) as nonnull,
-        dict[
-          'analysis_id' => $analysis['id'],
-          'user_id' => $user_id,
-          'bank_login_token' => $bank_login_token,
-        ],
+        $analysisEvent,
       );
-
+      $this->redisClient->xadd(
+        $this->redisStreamService->getNotificationWorkerStreamName(),
+        $analysisEvent,
+      );
       \http_response_code(201);
       echo \json_encode($analysis);
     } catch (\Exception $e) {

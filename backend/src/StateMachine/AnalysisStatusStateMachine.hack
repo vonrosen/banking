@@ -9,7 +9,7 @@ final class AnalysisStatusStateMachine {
     return AnalysisStatus::PENDING;
   }
 
-  private function getNextStatus(
+  public function getNextStatus(
     AnalysisStatus $current,
   ): ?AnalysisStatus {
     switch ($current) {

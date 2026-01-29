@@ -9,7 +9,6 @@ import { useSelector } from 'react-redux';
 
 export default function ConnectBankScreen() {
   const user = useSelector((state: RootState) => state.user.user);
-  const [isLoading, setIsLoading] = useState(false);
   const [showError, setShowError] = useState(false);
 
   const handleConnectBank = async () => {
@@ -19,8 +18,6 @@ export default function ConnectBankScreen() {
     }
 
     setShowError(false);
-    setIsLoading(true);
-
     try {
       const analysisService = new AnalysisService();
       const analysis = await analysisService.createAnalysis({
@@ -31,8 +28,6 @@ export default function ConnectBankScreen() {
     } catch (error) {
       console.error('Failed to create analysis:', error);
       setShowError(true);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -44,7 +39,6 @@ export default function ConnectBankScreen() {
       <SubmitButton
         label="Connect Bank Account"
         onPress={handleConnectBank}
-        loading={isLoading}
       />
     </View>
   );

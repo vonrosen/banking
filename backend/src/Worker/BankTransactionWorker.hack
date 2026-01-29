@@ -11,7 +11,7 @@ use type Banking\Models\AnalysisStatus;
 use type HackLogging\LogLevel;
 use type Banking\Services\RedisStreamService;
 
-final class BankTransactionWorker extends BaseWorker {
+final class BankTransactionWorker extends BaseAnalysisWorker {
 
   public function __construct(
     private IRedisClient $redisClient,
@@ -32,16 +32,31 @@ final class BankTransactionWorker extends BaseWorker {
     return AnalysisStatus::DOWNLOADING_TRANSACTIONS;
   }
 
-  protected async function processMessageAsync(string $id, dict<string, string> $fields): Awaitable<void> {
+  protected async function processMessageAsync(
+    string $id,
+    dict<string, string> $fields,
+  ): Awaitable<void> {
+    $analysis = await $this->analysisRepository
+      ->getAnalysis($fields['analysis_id']) as nonnull;
+
     $transactions = vec[];
 
-    foreach ($this->bankingClient->getTransactionsAsync($fields['bank_login_token']) await as $transaction) {
+    foreach (
+      $this->bankingClient
+        ->getTransactionsAsync($analysis['bank_login_token']) await as
+        $transaction
+    ) {
       $transactions[] = $transaction;
     }
 
     await $this->analysisRepository->updateAnalysisTransactionData(
       $fields['analysis_id'],
       \json_encode($transactions) as string,
+    );
+
+    $this->redisClient->xadd(
+      $this->redisStreamService->getNotificationWorkerStreamName(),
+      $fields,
     );
   }
 }

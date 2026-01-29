@@ -6,10 +6,11 @@ use type Banking\Attributes\Route;
 use type Banking\Repositories\{IUserRepository, UserRepository};
 use type Banking\Logging\LoggerFactory;
 use type HackLogging\LogLevel;
+use type HackLogging\Logger;
 
 final class UserController implements IController {
 
-  private \HackLogging\Logger $logger;
+  private Logger $logger;
 
   public function __construct(private IUserRepository $userRepository) {
     $this->logger = LoggerFactory::getLogger('UserController');

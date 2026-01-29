@@ -7,7 +7,7 @@ use type HackLogging\LogLevel;
 
 final class ConnectionManager {
 
-  private static function getLogger(): \HackLogging\Logger {
+  private static function getLogger(): Logger {
     return LoggerFactory::getLogger('ConnectionManager');
   }
 
@@ -46,7 +46,6 @@ final class ConnectionManager {
 
       $resultStatus = \pg_result_status($result);
       $resultError = \pg_result_error($result);
-      await $logger->writeAsync(LogLevel::INFO, 'Result status: '.$resultStatus.', error: '.($resultError ?: 'none'), dict[]);
 
       if ($resultError !== false && $resultError !== '') {
         throw new \Exception('Query failed: '.$resultError);

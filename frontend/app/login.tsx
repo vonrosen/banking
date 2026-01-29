@@ -20,7 +20,6 @@ export default function LoginScreen() {
   const [phoneError, setPhoneError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showError, setShowError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     phoneInputRef.current?.focus();
@@ -44,7 +43,6 @@ export default function LoginScreen() {
     const formattedPhone = digits.length === 11 ? `+${digits}` : `+1${digits}`;
 
     setShowError(false);
-    setIsLoading(true);
     try {
       const user = await userService.login({
         phone_number: formattedPhone,
@@ -55,8 +53,6 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Login failed', error);
       setShowError(true);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -113,7 +109,6 @@ export default function LoginScreen() {
           label="Login"
           onPress={handleSubmit}
           disabled={!isFormValid}
-          loading={isLoading}
         />
       </View>
     </KeyboardAvoidingView>

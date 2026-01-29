@@ -28,10 +28,6 @@ interface IRedisClient {
     ?int $blockMs = null,
   ): vec<StreamEntry>;
 
-  /**
-   * Create a consumer group on a stream.
-   * Returns true if created, false if already exists.
-   */
   public function xgroupCreate(
     string $stream,
     string $group,
@@ -39,10 +35,6 @@ interface IRedisClient {
     bool $mkstream = false,
   ): bool;
 
-  /**
-   * Read messages from a stream using a consumer group.
-   * Each message is delivered to only one consumer in the group.
-   */
   public function xreadgroup(
     string $group,
     string $consumer,
@@ -51,9 +43,6 @@ interface IRedisClient {
     ?int $blockMs = null,
   ): vec<StreamEntry>;
 
-  /**
-   * Acknowledge that messages have been processed.
-   */
   public function xack(
     string $stream,
     string $group,

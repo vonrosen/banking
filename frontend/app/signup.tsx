@@ -20,7 +20,6 @@ export default function SignUpScreen() {
   const [phoneError, setPhoneError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showError, setShowError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     phoneInputRef.current?.focus();
@@ -44,7 +43,6 @@ export default function SignUpScreen() {
     const formattedPhone = digits.length === 11 ? `+${digits}` : `+1${digits}`;
 
     setShowError(false);
-    setIsLoading(true);
     try {
       const user = await userService.createUser({
         phone_number: formattedPhone,
@@ -55,8 +53,6 @@ export default function SignUpScreen() {
     } catch (error) {
       console.error('Signup failed', error);
       setShowError(true);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -114,7 +110,6 @@ export default function SignUpScreen() {
           label="Submit"
           onPress={handleSubmit}
           disabled={!isFormValid}
-          loading={isLoading}
         />
       </View>
     </KeyboardAvoidingView>

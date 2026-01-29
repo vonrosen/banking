@@ -1,8 +1,13 @@
 namespace Banking\Services;
 
 use type Banking\Models\AnalysisStatus;
+use type Banking\Worker\NotificationWorker;
 
 final class RedisStreamService {
+
+    public function getNotificationWorkerStreamName(): string {
+        return 'stream:'.NotificationWorker::class;
+    }
 
     public function getStreamName(AnalysisStatus $status): ?string {
         switch ($status) {
