@@ -257,6 +257,10 @@ final class RedisClient implements IRedisClient {
     return (int)$result;
   }
 
+  public function setex(string $key, int $seconds, string $value): void {
+    $this->sendCommand(vec['SETEX', $key, (string)$seconds, $value]);
+  }
+
   public function close(): void {
     if ($this->socket !== null) {
       \fclose($this->socket);

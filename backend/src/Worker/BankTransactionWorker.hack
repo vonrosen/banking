@@ -53,10 +53,5 @@ final class BankTransactionWorker extends BaseAnalysisWorker {
       $fields['analysis_id'],
       \json_encode($transactions) as string,
     );
-
-    $this->redisClient->xadd(
-      $this->redisStreamService->getNotificationWorkerStreamName(),
-      $fields,
-    );
   }
 }

@@ -55,11 +55,6 @@ final class LLMAnalysisWorker extends BaseAnalysisWorker {
 
     await $this->analysisRepository
       ->updateAnalysisLLMResult($analysisId, $response['text']);
-
-    $this->redisClient->xadd(
-      $this->redisStreamService->getNotificationWorkerStreamName(),
-      $fields,
-    );
   }
 
   private function buildPrompt(mixed $transactionData): string {

@@ -1,13 +1,17 @@
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { SubmitButton } from '@/components/SubmitButton';
 import { AnalysisService } from '@/services/analysisService';
-import { RootState } from '@/store';
+import { AppDispatch, RootState } from '@/store';
+import { setAnalysis } from '@/store/slices/analysisSlice';
 import { generateRandomToken } from '@/utils/random';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function ConnectBankScreen() {
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.user.user);
   const [showError, setShowError] = useState(false);
 
@@ -16,7 +20,6 @@ export default function ConnectBankScreen() {
       setShowError(true);
       return;
     }
-
     setShowError(false);
     try {
       const analysisService = new AnalysisService();
@@ -24,7 +27,9 @@ export default function ConnectBankScreen() {
         user_id: user.id,
         bank_login_token: generateRandomToken(),
       });
-      console.log('Analysis created:', analysis);
+      dispatch(setAnalysis(analysis));
+      console.log('Analysis created with ID:', analysis.id);
+      router.push('/analysis-result');
     } catch (error) {
       console.error('Failed to create analysis:', error);
       setShowError(true);

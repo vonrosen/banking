@@ -1,15 +1,13 @@
+import { AnalysisStatus } from './analysisStatus';
+
 export type Analysis = {
     id: string;
     user_id: string;
-    status: string;
-    bank_login_token: string;
-    transaction_data: any;
-    llm_analysis_result: any;
+    status: AnalysisStatus;
     provider_policy_details: any;
-    quotes: any;
     error_message: string | null;
     error_step: string | null;
     retry_count: number;
-    created_at: Date;
-    updated_at: Date;
+    created_at: string;
+    updated_at: string;
 };

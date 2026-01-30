@@ -11,8 +11,14 @@ use type Banking\Logging\LoggerFactory;
 use type HackLogging\LogLevel;
 
 abstract class BaseAnalysisWorker extends BaseWorker {
+    const string ANALYSIS_CACHE_PREFIX = 'analysis:';
+    const int ANALYSIS_CACHE_TTL_SECONDS = 3600;
+
     abstract public function getAnalysisStatus(): AnalysisStatus;
-    abstract protected function processMessageAsync(string $messageId, dict<string, string> $fields): Awaitable<void>;
+    abstract protected function processMessageAsync(
+        string $messageId,
+        dict<string, string> $fields,
+    ): Awaitable<void>;
 
     protected Logger $logger;
 
@@ -28,7 +34,8 @@ abstract class BaseAnalysisWorker extends BaseWorker {
 
     <<__Override>>
     protected function getStreamName(): string {
-        return $this->redisStreamService->getStreamName($this->getAnalysisStatus()) as nonnull;
+        return $this->redisStreamService
+            ->getStreamName($this->getAnalysisStatus()) as nonnull;
     }
 
     <<__Override>>
@@ -37,33 +44,69 @@ abstract class BaseAnalysisWorker extends BaseWorker {
         dict<string, string> $fields,
     ): Awaitable<void> {
         $analysisId = $fields['analysis_id'];
-        
+
         await $this->logger->writeAsync(
             LogLevel::INFO,
-            Str\format('[%s] Processing message %s for analysis %s', \date('Y-m-d H:i:s'), $id, $analysisId),
+            Str\format(
+                '[%s] Processing message %s for analysis %s',
+                \date('Y-m-d H:i:s'),
+                $id,
+                $analysisId,
+            ),
             dict[],
         );
 
-        await parent::doProcessMessageAsync($id, $fields);
-        
-        await $this->analysisRepository->updateAnalysisStatus(
+        $analysis = await $this->analysisRepository->updateAnalysisStatus(
             $analysisId,
             (string)$this->getAnalysisStatus(),
         );
 
-        $nextStatus = $this->statusStateMachine->getNextStatus($this->getAnalysisStatus()) as nonnull;
+        $cacheKey = self::ANALYSIS_CACHE_PREFIX.$analysisId;
+        $this->redisClient->setex(
+            $cacheKey,
+            self::ANALYSIS_CACHE_TTL_SECONDS,
+            \json_encode(shape(
+                'id' => $analysis['id'],
+                'user_id' => $analysis['user_id'],
+                'status' => $analysis['status'],
+                'provider_policy_details' =>
+                    $analysis['provider_policy_details'],
+                'error_message' => $analysis['error_message'],
+                'error_step' => $analysis['error_step'],
+                'retry_count' => $analysis['retry_count'],
+                'created_at' => $analysis['created_at'],
+                'updated_at' => $analysis['updated_at'],
+            )),
+        );
+
+        await parent::doProcessMessageAsync($id, $fields);
+
+        $nextStatus = $this->statusStateMachine
+            ->getNextStatus($this->getAnalysisStatus()) as nonnull;
         $nextStreamName = $this->redisStreamService->getStreamName($nextStatus);
 
         if ($nextStreamName === null) {
-            await $this->analysisRepository->updateAnalysisStatus(
-                $analysisId,
-                (string)$nextStatus,
+            $analysis = await $this->analysisRepository
+                ->updateAnalysisStatus($analysisId, (string)$nextStatus);
+            $cacheKey = self::ANALYSIS_CACHE_PREFIX.$analysisId;
+            $this->redisClient->setex(
+                $cacheKey,
+                self::ANALYSIS_CACHE_TTL_SECONDS,
+                \json_encode(shape(
+                    'id' => $analysis['id'],
+                    'user_id' => $analysis['user_id'],
+                    'status' => $analysis['status'],
+                    'provider_policy_details' =>
+                        $analysis['provider_policy_details'],
+                    'error_message' => $analysis['error_message'],
+                    'error_step' => $analysis['error_step'],
+                    'retry_count' => $analysis['retry_count'],
+                    'created_at' => $analysis['created_at'],
+                    'updated_at' => $analysis['updated_at'],
+                )),
             );
         } else {
-            $this->redisClient->xadd(
-                $nextStreamName,
-                $fields,
-            );
+            $this->redisClient->xadd($nextStreamName, $fields);
         }
     }
 

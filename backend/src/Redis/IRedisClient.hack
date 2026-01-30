@@ -48,4 +48,6 @@ interface IRedisClient {
     string $group,
     vec<string> $ids,
   ): int;
+
+  public function setex(string $key, int $seconds, string $value): void;
 }

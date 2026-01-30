@@ -20,5 +20,5 @@ interface IAnalysisRepository {
   public function updateAnalysisStatus(
     string $analysis_id,
     string $status,
-  ): Awaitable<void>;
+  ): Awaitable<Analysis>;
 }
