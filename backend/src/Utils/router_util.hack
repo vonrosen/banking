@@ -46,7 +46,7 @@ function match_route(
           $param_value = Str\slice($path, $tmp_path_pos, $tmp_length);        
           $params[$param_name] = $param_value;
           break;          
-        }        
+        }  
         $tmp_length = $path_pos - $tmp_path_pos;
         $param_value = Str\slice($path, $tmp_path_pos, $tmp_length);        
         $params[$param_name] = $param_value;
@@ -65,18 +65,6 @@ function match_route(
   return null;
 }
 
-function path_to_regex(string $path): shape('regex' => string, 'params' => vec<string>) {
-  $params = vec[];
-  $pattern = re"/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/";
-  foreach (Regex\every_match($path, $pattern) as $match) {
-    $params[] = $match[1];
-  }
-  $regex = Regex\replace($path, $pattern, '(?P<$1>[^/]+)');
-  $regex = Str\replace($regex, '/', '\\/');
-  return shape('regex' => '^'.$regex.'$', 'params' => $params);
-}
-
-<<__Memoize>>
 function get_routed_methods_map_async(): dict<string, RoutedMethod> {
   $routed_methods = dict[];
   $autoload_map = \Facebook\AutoloadMap\Generated\map_uncached();
