@@ -4,6 +4,7 @@ export type Analysis = {
     id: string;
     user_id: string;
     status: AnalysisStatus;
+    llm_analysis_result: any;
     provider_policy_details: any;
     error_message: string | null;
     error_step: string | null;

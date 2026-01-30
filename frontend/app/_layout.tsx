@@ -50,6 +50,7 @@ export default function RootLayout() {
               <Stack.Screen name="login" options={{ title: 'Login' }} />
               <Stack.Screen name="connect-bank" options={{ title: 'Connect Bank Account', headerBackVisible: false }} />
               <Stack.Screen name="analysis-result" options={{ title: 'Analysis Result', headerBackVisible: false }} />
+              <Stack.Screen name="insurance-login" options={{ title: 'Insurance Login', headerBackVisible: false }} />
             </Stack>
             <StatusBar style="auto" />
           </ThemeProvider>

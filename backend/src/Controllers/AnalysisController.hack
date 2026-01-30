@@ -48,15 +48,28 @@ final class AnalysisController implements IController {
         ],
       );
 
+      $analysisDto = shape(
+        'id' => $analysis['id'],
+        'user_id' => $analysis['user_id'],
+        'status' => $analysis['status'],
+        'llm_analysis_result' => $analysis['llm_analysis_result'],
+        'provider_policy_details' => $analysis['provider_policy_details'],
+        'error_message' => $analysis['error_message'],
+        'error_step' => $analysis['error_step'],
+        'retry_count' => $analysis['retry_count'],
+        'created_at' => $analysis['created_at'],
+        'updated_at' => $analysis['updated_at'],
+      );
+
       $cacheKey = self::ANALYSIS_CACHE_PREFIX.$analysis['id'];
       $this->redisClient->setex(
         $cacheKey,
         self::ANALYSIS_CACHE_TTL_SECONDS,
-        \json_encode($analysis),
+        \json_encode($analysisDto),
       );
 
       \http_response_code(201);
-      echo \json_encode($analysis);
+      echo \json_encode($analysisDto);
     } catch (\Exception $e) {
       \http_response_code(500);
       echo \json_encode(shape(
@@ -98,6 +111,7 @@ final class AnalysisController implements IController {
         'id' => $analysis['id'],
         'user_id' => $analysis['user_id'],
         'status' => $analysis['status'],
+        'llm_analysis_result' => $analysis['llm_analysis_result'],
         'provider_policy_details' => $analysis['provider_policy_details'],
         'error_message' => $analysis['error_message'],
         'error_step' => $analysis['error_step'],

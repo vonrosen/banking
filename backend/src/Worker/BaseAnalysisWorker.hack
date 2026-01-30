@@ -69,6 +69,7 @@ abstract class BaseAnalysisWorker extends BaseWorker {
                 'id' => $analysis['id'],
                 'user_id' => $analysis['user_id'],
                 'status' => $analysis['status'],
+                'llm_analysis_result' => $analysis['llm_analysis_result'],
                 'provider_policy_details' =>
                     $analysis['provider_policy_details'],
                 'error_message' => $analysis['error_message'],
@@ -96,6 +97,7 @@ abstract class BaseAnalysisWorker extends BaseWorker {
                     'id' => $analysis['id'],
                     'user_id' => $analysis['user_id'],
                     'status' => $analysis['status'],
+                    'llm_analysis_result' => $analysis['llm_analysis_result'],
                     'provider_policy_details' =>
                         $analysis['provider_policy_details'],
                     'error_message' => $analysis['error_message'],

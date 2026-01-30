@@ -6,7 +6,9 @@ import {
   getTotalSteps,
   isTerminalStatus,
 } from '@/types/analysisStatus';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { InsuranceLoginModal } from './InsuranceLoginModal';
 
 type AnalysisProgressProps = {
   analysisId: string;
@@ -14,16 +16,45 @@ type AnalysisProgressProps = {
 
 export function AnalysisProgress({ analysisId }: AnalysisProgressProps) {
   const { currentStatus, error } = useAnalysisStatus(analysisId);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const status = currentStatus || AnalysisStatus.PENDING;
+  const isAwaitingConsent = status === AnalysisStatus.AWAITING_PROVIDER_CONSENT;
   const displayText = STATUS_DISPLAY_TEXT[status];
   const currentStep = getStatusStep(status);
   const totalSteps = getTotalSteps();
   const progress = currentStep / totalSteps;
   const isTerminal = isTerminalStatus(status);
 
+  // Auto-show modal when status becomes awaiting_provider_consent
+  useEffect(() => {
+    if (isAwaitingConsent) {
+      setIsModalVisible(true);
+    }
+  }, [isAwaitingConsent]);
+
+  const handleLoginSubmit = (username: string, password: string) => {
+    // TODO: Submit credentials to backend
+    console.log('Submitting credentials:', { username, password });
+    setIsModalVisible(false);
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleOpenModal = () => {
+    setIsModalVisible(true);
+  };
+
   return (
     <View style={styles.container}>
+      <InsuranceLoginModal
+        visible={isModalVisible}
+        onSubmit={handleLoginSubmit}
+        onCancel={handleModalCancel}
+      />
+
       <View style={styles.spinnerContainer}>
         {!isTerminal && <ActivityIndicator size="large" color="#007AFF" />}
         {status === AnalysisStatus.COMPLETED && (
@@ -43,6 +74,12 @@ export function AnalysisProgress({ analysisId }: AnalysisProgressProps) {
       <Text style={styles.stepText}>
         Step {currentStep} of {totalSteps}
       </Text>
+
+      {isAwaitingConsent && !isModalVisible && (
+        <Pressable style={styles.loginButton} onPress={handleOpenModal}>
+          <Text style={styles.loginButtonText}>Enter Insurance Credentials</Text>
+        </Pressable>
+      )}
 
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -93,6 +130,18 @@ const styles = StyleSheet.create({
   stepText: {
     fontSize: 14,
     color: '#8E8E93',
+  },
+  loginButton: {
+    marginTop: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   errorText: {
     fontSize: 14,
