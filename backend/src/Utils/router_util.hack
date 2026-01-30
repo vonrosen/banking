@@ -18,22 +18,48 @@ function match_route(
   if (C\contains_key($routes, $key)) {
     return shape('route' => $routes[$key], 'params' => dict[]);
   }
-  foreach ($routes as $route_key => $route) {
-    if (!Str\starts_with($route_key, $method.':')) {
-      continue;
-    }
-    if (C\is_empty($route['params'])) {
-      continue;
-    }
-    $preg_matches = darray[];
-    if (\preg_match_with_matches('/'.$route['regex'].'/', $path, inout $preg_matches) === 1) {
-      $matches = dict[];
-      foreach ($route['params'] as $param) {
-        if (\array_key_exists($param, $preg_matches)) {
-          $matches[$param] = (string)$preg_matches[$param];
-        }
+  foreach ($routes as $route_key => $route) {    
+    $routed_path = Str\split($route_key, ":")[1];
+    $params = dict[];
+    $routed_path_pos = 0;
+    $path_pos = 0;
+    $match = true;
+    while($path_pos !== null && $path_pos < Str\length($path)) {
+      $routed_path_char = $routed_path[$routed_path_pos];
+      if ($routed_path_char === '{') {
+        $tmp_routed_path_pos = $routed_path_pos;
+        $routed_path_pos = Str\search($routed_path, '}', $routed_path_pos);
+        if ($routed_path_pos == null) {
+          throw new \Exception(Str\format('Invalid path found: %s', $routed_path));
+        }        
+        $tmp_length = $routed_path_pos - ($tmp_routed_path_pos + 1);
+        $param_name = Str\slice($routed_path, $tmp_routed_path_pos + 1, $tmp_length);
+        $routed_path_pos++;
+
+        $tmp_path_pos = $path_pos;
+        $path_pos = Str\search($path, '/', $path_pos);
+        if ($path_pos === null) {
+          if ($routed_path_pos !== Str\length($routed_path)) {
+            $match = false;
+          }
+          $tmp_length = Str\length($path) - $tmp_path_pos;
+          $param_value = Str\slice($path, $tmp_path_pos, $tmp_length);        
+          $params[$param_name] = $param_value;
+          break;          
+        }        
+        $tmp_length = $path_pos - $tmp_path_pos;
+        $param_value = Str\slice($path, $tmp_path_pos, $tmp_length);        
+        $params[$param_name] = $param_value;
       }
-      return shape('route' => $route, 'params' => $matches);
+      if ($routed_path[$routed_path_pos] !== $path[$path_pos]) {
+        $match = false;
+        break;
+      }
+      $path_pos++;
+      $routed_path_pos++;
+    }
+    if ($match) {
+      return shape('route' => $route, 'params' => $params);
     }
   }
   return null;
@@ -76,14 +102,10 @@ function get_routed_methods_map_async(): dict<string, RoutedMethod> {
       }
       $http_method = $route->getMethod();
       $path = $route->getPath();
-      $path_info = path_to_regex($path);
       $key = Str\format('%s:%s', Str\uppercase($http_method), $path);
       $routed_methods[$key] = shape(
         'controller' => $rc->getName(),
         'method' => $method->getName(),
-        'pattern' => $path,
-        'regex' => $path_info['regex'],
-        'params' => $path_info['params'],
       );
     }
   }
