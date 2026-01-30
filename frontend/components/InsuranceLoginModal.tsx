@@ -15,7 +15,17 @@ export function InsuranceLoginModal({ visible, onSubmit, onCancel }: InsuranceLo
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const providerName = currentAnalysis?.llm_analysis_result?.[0]?.provider ?? 'your insurance provider';
+  const getProviderName = (): string => {
+    try {
+      const llmResult = currentAnalysis?.llm_analysis_result;
+        const parsed = JSON.parse(llmResult);
+        return parsed?.insurance_payments?.[0]?.provider ?? 'your insurance provider';
+    } catch {
+      return 'your insurance provider';
+    }
+  };
+
+  const providerName = getProviderName();
 
   const handleSubmit = () => {
     onSubmit(username, password);
